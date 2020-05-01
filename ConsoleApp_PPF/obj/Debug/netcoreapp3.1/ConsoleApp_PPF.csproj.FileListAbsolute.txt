@@ -1,0 +1,13 @@
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\bin\Debug\netcoreapp3.1\ConsoleApp_PPF.exe
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\bin\Debug\netcoreapp3.1\ConsoleApp_PPF.deps.json
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\bin\Debug\netcoreapp3.1\ConsoleApp_PPF.runtimeconfig.json
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\bin\Debug\netcoreapp3.1\ConsoleApp_PPF.runtimeconfig.dev.json
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\bin\Debug\netcoreapp3.1\ConsoleApp_PPF.dll
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\bin\Debug\netcoreapp3.1\ConsoleApp_PPF.pdb
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\obj\Debug\netcoreapp3.1\ConsoleApp_PPF.csprojAssemblyReference.cache
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\obj\Debug\netcoreapp3.1\ConsoleApp_PPF.csproj.CoreCompileInputs.cache
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\obj\Debug\netcoreapp3.1\ConsoleApp_PPF.AssemblyInfoInputs.cache
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\obj\Debug\netcoreapp3.1\ConsoleApp_PPF.AssemblyInfo.cs
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\obj\Debug\netcoreapp3.1\ConsoleApp_PPF.dll
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\obj\Debug\netcoreapp3.1\ConsoleApp_PPF.pdb
+C:\Users\acky\OneDrive\ドキュメント\PPF課題\ConsoleApp_PPF\obj\Debug\netcoreapp3.1\ConsoleApp_PPF.genruntimeconfig.cache

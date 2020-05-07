@@ -48,9 +48,9 @@ namespace WindowsFormsAppParts
             DataTable tdTable = new DataTable();
             
             tdTable.Columns.Add(new DataColumn("完了", typeof(bool)));
-            tdTable.Columns.Add("期限");
+            tdTable.Columns.Add("期限", typeof(DateTime));
             tdTable.Columns.Add("やること");
-            
+            tdTable.Columns.Add(new DataColumn("表示", typeof(bool))); ;  // 表示設定（内部データ。画面上非表示にする）
 
             if (File.Exists(csvPath))
             // 保存済のcsvファイルが存在する場合、ファイルを開く
@@ -91,10 +91,13 @@ namespace WindowsFormsAppParts
         {
             string csvPath = "";
             // 保存先とファイル名を指定する
-            SaveFileDialog sfd = new SaveFileDialog();
-            sfd.FileName = "TodoList.csv";
-            sfd.Filter = "csvファイル(*.csv)|*.*";
-            sfd.Title = "保存先を指定してください";
+            SaveFileDialog sfd = new SaveFileDialog
+            {
+                FileName = "TodoList.csv",
+                Filter = "csvファイル(*.csv)|*.*",
+                Title = "保存先を指定してください"
+            };
+            
             if (sfd.ShowDialog() == DialogResult.OK)
             {
                 csvPath = sfd.FileName;

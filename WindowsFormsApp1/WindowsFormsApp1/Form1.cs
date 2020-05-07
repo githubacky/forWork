@@ -19,6 +19,9 @@ namespace WindowsFormsApp1
         private readonly string textEncoding = "UTF-8";
         private int statusEnable = 1;   // イベントによるステータスバー更新の有効フラグ
 
+        private const int IDX_FIN = 0; //「完了」列のインデックス
+        private const int IDX_DISP = 3; //「表示」列のインデックス
+
         public Form1()
         {
             InitializeComponent();
@@ -41,38 +44,58 @@ namespace WindowsFormsApp1
 
             // DataTableとDataGridViewをバインド
             dataGridView1.DataSource = tdTable;
-            
-            // 完了タスクは非表示にする
-            int rowCount = dataGridView1.Rows.Count - 1;
-            int finCount = 0;
-            for (int i = 0; i < rowCount; i++)
-            {
-                bool hideFlag = (bool)dataGridView1.Rows[i].Cells[0].Value;
-                if (hideFlag == true)
-                {
-                    dataGridView1.CurrentCell = null;   // 選択解除
-                    dataGridView1.Rows[i].Visible = false;
-                    finCount++;
-                }
-            }
-            
+
+            // 変更を確定
+            tdTable.AcceptChanges();
+
+            // 初期表示設定
+            InitView();
+
             // イベントによるステータスバー更新を有効に戻す
             statusEnable = 1;
-            
+
+            // イベント登録
+            dataGridView1.CellContentClick +=
+                new System.Windows.Forms.DataGridViewCellEventHandler(DataGridView1_CellContentClick);    // 完了タスクの非表示用
+            dataGridView1.CellValidating +=
+                new System.Windows.Forms.DataGridViewCellValidatingEventHandler(DataGridView1_CellValidating); // 入力済タスクの修正用
+            dataGridView1.CellValidated +=
+                new System.Windows.Forms.DataGridViewCellEventHandler(DataGridView1_CellValidated);    // 入力済タスクの修正用
+
+        }
+
+        /// <summary>
+        /// DataGridViewの初期表示に関する設定をする。
+        /// </summary>
+        private void InitView()
+        {
             // DataGridViewの書式設定
+            dataGridView1.Columns[IDX_DISP].Visible = false;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;   // 列幅の自動調整
             dataGridView1.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;  // タイトルを中央揃え
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;  // セル選択時、行全体を選択
             dataGridView1.AllowUserToAddRows = false;   // 手動での行追加を禁止
 
-            // イベント登録
-            this.dataGridView1.CellContentClick +=
-                new System.Windows.Forms.DataGridViewCellEventHandler(this.DataGridView1_CellContentClick);    // 完了タスクの非表示用
-            this.dataGridView1.CellValidating +=
-                new System.Windows.Forms.DataGridViewCellValidatingEventHandler(this.DataGridView1_CellValidating); // 入力済タスクの修正用
-            this.dataGridView1.CellValidated +=
-                new System.Windows.Forms.DataGridViewCellEventHandler(this.DataGridView1_CellValidated);    // 入力済タスクの修正用
+            // 表示非表示の設定
+            // 初期表示では完了タスクを非表示にする
+            foreach (DataRow dr in tdTable.Rows)
+            {
+                if ((bool)dr[IDX_FIN] == true)
+                {
+                    // 完了タスクがtrueだったら
+                    // 表示はfalse(=非表示)にする
+                    dr[IDX_DISP] = false;
 
+                }
+                else
+                {
+                    // 完了タスク上記以外
+                    // 表示はtrue(=表示)にする
+                    dr[IDX_DISP] = true;
+                }
+            }
+            // RowFillerの設定(表示列がtrueの行のみ表示する)
+            tdTable.DefaultView.RowFilter = "表示 = true";
         }
 
 
@@ -100,13 +123,7 @@ namespace WindowsFormsApp1
             {
 
                 // Rows.Addメソッドを使ってデータを追加
-                tdTable.Rows.Add(false, lim, toDo);
-
-                /* 登録時の完了タスク再表示エラーデバッグ用
-                //int lastRow = dataGridView1.Rows.Count - 1;
-                //dataGridView1.Rows[lastRow].Selected = true;
-                dataGridView1.CurrentRow.HeaderCell.Selected = false;
-                */
+                tdTable.Rows.Add(false, lim, toDo, true);
                 
             }
 
@@ -121,6 +138,7 @@ namespace WindowsFormsApp1
         {
             if (dataGridView1.SelectedRows.Count <= 0)
             {
+                // 削除対象タスクが選択されているかをチェック
                 MessageBox.Show("タスクが選択されていません。", "確認",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Exclamation);
@@ -134,14 +152,22 @@ namespace WindowsFormsApp1
                 // OKボタンを押したら削除実行
                 if (result == DialogResult.OK)
                 {
-                    int rowCount = tdTable.Rows.Count - 1;
-                    for (int i = rowCount; i >= 0; i--)
+                    foreach (DataGridViewRow dgr in dataGridView1.SelectedRows)
                     {
-                        if (dataGridView1.Rows[i].Selected)
+                        DataRowView drv = (DataRowView)dgr.DataBoundItem;
+                        DataRow dr = (DataRow)drv.Row;
+                        if (dr.RowState == DataRowState.Added)
                         {
-                            tdTable.Rows.RemoveAt(i);
+                            // 追加された行に対しては変更をキャンセル
+                            dr.RejectChanges();
+                        }
+                        else
+                        {
+                            dr.Delete();
+                            dr.AcceptChanges();
                         }
                     }
+                    DataGridView1_Statusbar_Update();
                 }
             }
             
@@ -275,16 +301,24 @@ namespace WindowsFormsApp1
         /// <param name="e"></param>
         private void BtnRedisplay_Click(object sender, EventArgs e)
         {
-            dataGridView1.CurrentCell = null;
-            foreach (DataGridViewRow row in dataGridView1.Rows)
+            // ステータスバーの自動更新を一時的にOFFする
+            statusEnable = 0;
+
+            // 表示設定
+            foreach (DataRow dr in tdTable.Rows)
             {
-                if (row.Visible == false)
-                {
-                    row.Visible = true;
-                }
+                // すべてtrue(=表示)にする
+                dr[IDX_DISP] = true;
             }
+
+            // フィルタ解除
+            tdTable.DefaultView.RowFilter = "";
+
             // ステータスバー更新
             DataGridView1_Statusbar_Update();
+
+            // ステータスバーの自動更新を元に戻す
+            statusEnable = 1;
         }
 
         /// <summary>
@@ -295,25 +329,36 @@ namespace WindowsFormsApp1
         /// <param name="e"></param>
         private void DataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.ColumnIndex == 0)
+            // ステータスバーの自動更新を一時的にOFFする
+            statusEnable = 0;
+
+            // DataViewのフィルタ条件を設定（削除行は表示しない）
+            tdTable.DefaultView.RowStateFilter = DataViewRowState.Added
+                     | DataViewRowState.ModifiedCurrent | DataViewRowState.Unchanged;
+
+            if (e.ColumnIndex == 0 && e.RowIndex != -1)
             {
                 try
                 {
                     bool beforeState = (bool)dataGridView1.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
+
                     if (beforeState == false)
                     {
-                        int targetRow = e.RowIndex;
-                        dataGridView1.CurrentCell = null;   // 選択解除
-                        dataGridView1.Rows[targetRow].Visible = false;
-                        // 行が選択された状態でVisible = falseとするとエラーが発生するため、
-                        // 選択解除(CurrentCell = null)することで回避した。
+                        // バインドしているデータを取得
+                        DataGridViewRow dgr = this.dataGridView1.CurrentRow;
+                        DataRowView drv = (DataRowView)dgr.DataBoundItem;
+                        DataRow dr = (DataRow)drv.Row;
+
+                        dr[IDX_FIN] = true;   // 完了済みにする
+                        dr[IDX_DISP] = false; // 非表示に設定 
                     }
                     else
                     {
                         // "完了"チェックを外した時、行選択されたままだと
-                        // 直後に再度チェックした時に非表示にならないため、行選択を解除する
+                        // 再度チェックした時に非表示にならないため、行選択を解除する
                         dataGridView1.CurrentCell = null;
                     }
+                    tdTable.DefaultView.RowFilter = "表示 = true";
                     // ステータスバー更新
                     DataGridView1_Statusbar_Update();
                 }
@@ -322,6 +367,9 @@ namespace WindowsFormsApp1
                     return;
                 }
             }
+
+            // ステータスバーの自動更新を元に戻す
+            statusEnable = 1;
         }
 
 
@@ -356,28 +404,15 @@ namespace WindowsFormsApp1
         /// </summary>
         private void DataGridView1_Statusbar_Update()
         {
-            int taskCount = dataGridView1.Rows.Count;   // 登録タスク数
-            int finCount = 0;   // 完了タスク数
-            int undispCount = 0; // 非表示タスク数
-            for (int i = 0; i < taskCount; i++)
-            {
-                bool finFlag = (bool)dataGridView1.Rows[i].Cells[0].Value;
-                bool undispFlag = dataGridView1.Rows[i].Visible;
-                if (finFlag == true)
-                // 完了タスクをカウント
-                {
-                    finCount++;
-                }
-                if (undispFlag == false)
-                // 非表示タスクをカウント
-                {
-                    undispCount++;
-                }
+            int taskCount = tdTable.Rows.Count;   // 登録タスク数
+            // 完了タスク数
+            int finCount = tdTable.Select("完了=true").Length;
+            // 非表示タスク数
+            int undispCount = tdTable.Select("表示=false").Length;
 
-            }
             // ステータスバーに表示
-            toolStripStatusLabel1.Text = 
-                string.Format("タスク数：{0} / 完了タスク：{1}（うち非表示 {2}）", 
+            toolStripStatusLabel1.Text =
+                string.Format("タスク数：{0} / 完了タスク：{1}（うち非表示 {2}）",
                 taskCount, finCount, undispCount);
         }
 
